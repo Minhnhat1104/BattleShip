@@ -80,6 +80,14 @@ def createServer():
     
 
 def handleClient(clientConnection, clientAddr):
+    def caesar_decrypt(word):
+        c = ''
+        for i in word:
+            if (i == ' '):
+                c += ' '
+            else:
+                c += (chr(ord(i) - 3))
+        return c
     isLogin = False
     while isLogin == False:
         if Login(clientConnection) == True:
@@ -89,8 +97,12 @@ def handleClient(clientConnection, clientAddr):
             clientConnection.sendall('Wrong username or password'.encode("utf8"))
             createNewUser = clientConnection.recv(1024).decode("utf8")
             if createNewUser == "create new user":
-                newUserObject = clientConnection.recv(1024).decode("utf8")
-                database.append(newUserObject.split(';'))
+                hasEncryption = clientConnection.recv(1024).decode("utf8")
+                newUserObjectList = clientConnection.recv(1024).decode("utf8").split(";")
+                if hasEncryption == "Encrypted":
+                    for i in range(len(newUserObjectList)):
+                        newUserObjectList[i] = caesar_decrypt(newUserObjectList[i])
+                database.append(newUserObjectList)
                 UpdateDatabase()
                 print('add to database and database file successful')
 
@@ -131,7 +143,6 @@ def startingRoom(clientConnection):
         creatingIDRoomMessage = clientConnection.recv(1024).decode("utf8")
         clientConnection.sendall("justDoIt".encode("utf8"))
         hasInvitationMess = clientConnection.recv(1024).decode("utf8")
-        print(f"hasInvitationMess: {hasInvitationMess}")
         if hasInvitationMess == "hasAInvitation":
             print("Terminated thread")
             return
@@ -143,7 +154,6 @@ def startingRoom(clientConnection):
             return
         
         listRoomInfo = clientConnection.recv(1024).decode("utf8").split(";")
-        print(listRoomInfo)
         if Createroom(listRoomInfo[0], listRoomInfo[1], listRoomInfo[2]) == True:
             GamePlay(listRoomInfo[1], listRoomInfo[2])
             
@@ -152,7 +162,6 @@ def Createroom(roomID, username1, username2):
     socketPlayer[username2].sendall(";".join([roomID, username1]).encode("utf8"))
     
     signalAcceptCreateRoom = socketPlayer[username2].recv(1024).decode("utf8")
-    print(f"signalAcceptCreateRoom: {signalAcceptCreateRoom}")
     if signalAcceptCreateRoom == "Accept":
         socketPlayer[username1].sendall("Accepted_create_room".encode("utf8"))
         return True
@@ -316,8 +325,22 @@ def CheckUserinfo(clientConnection):
             check_username_showall(clientConnection)
 
 def ChangePassword(clientConnection):
+    def caesar_decrypt(word):
+        c = ''
+        for i in word:
+            if (i == ' '):
+                c += ' '
+            else:
+                c += (chr(ord(i) - 3))
+        return c
+    hasEncryption = clientConnection.recv(1024).decode("utf8")
     objectRecieve = clientConnection.recv(1024).decode("utf8")
     list = objectRecieve.split(';')
+    print(f"list: {list}")
+    if hasEncryption == "Encrypted":
+        for i in range(len(list)):
+            list[i] = caesar_decrypt(list[i])
+        print("Decrypt success")
     for i in range(len(database)):
         if list[0] == database[i][0]:
             if list[1] == database[i][1]:
@@ -397,10 +420,6 @@ def GamePlay(username1, username2):
     def isDestroyedAll(listShipBoard):
         return len(listShipBoard) == 0
     
-    
-    print(f"Username1: {username1}")
-    print(f"Username2: {username2}")
-    
     stringBoard1 = socketPlayer[username1].recv(1024).decode("utf8")
     print(f"Recieved Board from {username1}")
     stringBoard2 = socketPlayer[username2].recv(1024).decode("utf8")
@@ -435,11 +454,8 @@ def GamePlay(username1, username2):
     for i in range(len(board2)):
         for j in range(len(board2[i])):
             if board2[i][j] == "X":
-                listShipBoard2.append([i,j])       
-    print(listShipBoard1)
-    print(listShipBoard2)
-    
-
+                listShipBoard2.append([i,j])
+                
     def socket1Attack():
         socket1Bullet = socket1.recv(1024).decode("utf8").split(";")
         print(f"socket1's bullet: {socket1Bullet}")

@@ -119,7 +119,6 @@ def startingRoomAndRecieveInvitation(soc):
             roomID = input("create_room (choose ID room): ")
             soc.sendall("creatingIDRoom".encode("utf8"))
             messageWhenJoinRoomList = soc.recv(1024).decode("utf8").split(";")
-            print(f"messageWhenJoinRoomList: {messageWhenJoinRoomList}")
             if messageWhenJoinRoomList[0]=="SomeOneInviteYouToARoom":
                 print("you have an Invitation...")
                 time.sleep(2)
@@ -132,11 +131,11 @@ def startingRoomAndRecieveInvitation(soc):
                 
             username2 = input("with (enter username): ")
             soc.sendall("choosingUserName".encode("utf8"))
-            messageWhenJoinRoomList = soc.recv(1024).decode("utf8")
-            if len(messageWhenJoinRoomList.split(';'))>1:
-                print("you have a Invitation...")
+            messageWhenJoinRoomList = soc.recv(1024).decode("utf8").split(";")
+            if messageWhenJoinRoomList[0]=="SomeOneInviteYouToARoom":
+                print("you have an Invitation...")
                 time.sleep(2)
-                if recieveInviteCreateRoom(soc) == True:
+                if recieveInviteCreateRoom(soc, messageWhenJoinRoomList) == True:
                     GamePlay(soc)
                     return
             else:
@@ -152,7 +151,6 @@ def startingRoomAndRecieveInvitation(soc):
             while len(messageWhenJoinRoomList) != 0:
                 messageWhenJoinRoomList = ""
         listRoominfo = [roomID, usernameLoginSuccessful[0], username2]
-        print(f'listRoominfo: {listRoominfo}')
         #someoneInviteToRoomSignal = soc.recv(1024).decode("utf8")
         #if someoneInviteToRoomSignal == 'SomeOneInviteYouToARoom':
         soc.sendall(';'.join(listRoominfo).encode("utf8"))
@@ -168,11 +166,7 @@ def startingRoomAndRecieveInvitation(soc):
 
             
 def recieveInviteCreateRoom(soc, message):
-    print("hello1")
     removeJustDoItSignal = soc.recv(1024).decode("utf8")
-    print("hello2")
-    
-    print(f'removeJustDoItSignal: {removeJustDoItSignal}')
     print(f"{message[2]} invite you to room {message[1]}")
     choice = input("Enter your choice (y/n): ")
     if choice == 'y':
@@ -234,14 +228,33 @@ def Login(soc):
         return False
 
 def createNewUser(soc):
-    new_username = input('\nPlease Enter A New Username : ')
-    new_password = input('Please Enter A New Password : ')
+    def caesar_encrypt(word):
+        c = ''
+        for i in word:
+            if (i == ' '):
+                c += ' '
+            else:
+                c += (chr(ord(i) + 3))
+        return c
+    new_username = input('\nPlease Enter A New Username: ')
+    new_password = stdiomask.getpass('Please Enter A New Password: ')
     new_fullname = input('Please Enter Fullname: ')
     new_dof = input('Please Enter Date Of Birth: ')
     new_note = input('Please Enter your note: ')
-    newUserObjectList = [new_username, new_password, new_fullname, new_dof, "0", new_note, "offline"]
-    soc.sendall(';'.join(newUserObjectList).encode("utf8"))
-    print('Ending create new user')
+    newUserInfoList = [new_username, new_password, new_fullname, new_dof, "0", new_note, "offline"]
+    print('Do you wanna encrypt account before sending?')
+    print('1) Yes')
+    print('2) No')
+    choice = int(input('Enter your choice (1-2): '))
+    if choice == 1:
+        for i in range(len(newUserInfoList)):
+            newUserInfoList[i] = caesar_encrypt(newUserInfoList[i])
+        soc.sendall("Encrypted".encode("utf8"))
+    elif choice == 2:
+        soc.sendall("No Encrypted".encode("utf8"))
+    soc.sendall(';'.join(newUserInfoList).encode("utf8"))
+    print('Ending create new user...')
+    time.sleep(1)
 
 #end Login section
 
@@ -380,9 +393,29 @@ def CheckUserinfo(soc):
         clearConsole()
 
 def ChangePassword(soc):
-    oldPassword = input('Enter your old password: ')
-    newPassword = input('Enter your new password: ')
+    def caesar_encrypt(word):
+        c = ''
+        for i in word:
+            if (i == ' '):
+                c += ' '
+            else:
+                c += (chr(ord(i) + 3))
+        return c
+    
+    oldPassword = stdiomask.getpass("Your old password: ")
+    newPassword = stdiomask.getpass("Enter new Password: ")
     list = [usernameLoginSuccessful[0], oldPassword, newPassword]
+    print('Do you wanna encrypt account before sending?')
+    print('1) Yes')
+    print('2) No')
+    choice = int(input('Enter your choice (1-2): '))
+    if choice == 1:
+        for i in range(len(list)):
+            list[i] = caesar_encrypt(list[i])
+        soc.sendall("Encrypted".encode("utf8"))
+    elif choice == 2:
+        soc.sendall("No Encrypted".encode("utf8"))
+        
     soc.sendall(';'.join(list).encode("utf8"))
     message = soc.recv(1024).decode("utf8")
     if message == 'change password successful':
@@ -463,11 +496,8 @@ def GamePlay(soc):
             board2.append(["O"] * 10)
     
     def printTwoBoard():
-        # print(Fore.RED)
-        # print(Back.CYAN)
         gotoxy(7,3)
         print("Your board")
-        
         gotoxy(41,3)
         print("Your opponent's board")
         
