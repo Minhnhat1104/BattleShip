@@ -447,8 +447,6 @@ def SetupInfo(soc):
 def GamePlay(soc):
     clearConsole()
     
-    readyToStartGame = input("Enter something to startGame")
-    
     board1 = []
     board2 = []
     def createBoard():
@@ -536,13 +534,8 @@ def GamePlay(soc):
     def gotoxy(x,y):
         print ("%c[%d;%df" % (0x1B, y, x), end='')
     
-    print("hello1")
     createBoard()
-    print("hello2")
     sendBoardtoServer()
-    print("hello3")
-    printTwoBoard()
-    
     # soc.sendall(';'.join(list).encode("utf8"))
     # message = soc.recv(1024).decode("utf8")
     turnOrder = soc.recv(1024).decode("utf8")
