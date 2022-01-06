@@ -87,7 +87,7 @@ def createClient():
         # ----------end create room----
 
         # -------------game play---------
-        # GamePlay(soc)
+        GamePlay(soc)
         
         #draft
         # content1 = soc.recv(1024).decode("utf8") #recieve
@@ -100,6 +100,8 @@ def createClient():
         soc.close()
 
 #----------Waiting Room------
+
+messageWhenJoinRoomList = ""
 
 def startingRoomAndRecieveInvitation(soc):
     startGameCommand = input("Enter start game command: ")
@@ -115,40 +117,72 @@ def startingRoomAndRecieveInvitation(soc):
         foundUserName = False
         while foundUserName == False:
             roomID = input("create_room (choose ID room): ")
+            soc.sendall("creatingIDRoom".encode("utf8"))
+            messageWhenJoinRoomList = soc.recv(1024).decode("utf8").split(";")
+            print(f"messageWhenJoinRoomList: {messageWhenJoinRoomList}")
+            if messageWhenJoinRoomList[0]=="SomeOneInviteYouToARoom":
+                print("you have an Invitation...")
+                time.sleep(2)
+                if recieveInviteCreateRoom(soc, messageWhenJoinRoomList) == True:
+                    GamePlay(soc)
+                    return
+            else:
+                time.sleep(2)
+                soc.sendall("NoInvitation".encode("utf8"))
+                
             username2 = input("with (enter username): ")
+            soc.sendall("choosingUserName".encode("utf8"))
+            messageWhenJoinRoomList = soc.recv(1024).decode("utf8")
+            if len(messageWhenJoinRoomList.split(';'))>1:
+                print("you have a Invitation...")
+                time.sleep(2)
+                if recieveInviteCreateRoom(soc) == True:
+                    GamePlay(soc)
+                    return
+            else:
+                time.sleep(2)
+                soc.sendall("NoInvitation".encode("utf8"))
+                
             for i in range(len(listOnlineUser)):
                 if username2 == listOnlineUser[i]:
                     foundUserName = True
                     break
-            if foundUserName == True:
-                break
-            print("username is unavailable, please create create room again!")
+            if foundUserName == False:
+                print("username is unavailable, please create create room again!")
+            while len(messageWhenJoinRoomList) != 0:
+                messageWhenJoinRoomList = ""
         listRoominfo = [roomID, usernameLoginSuccessful[0], username2]
         print(f'listRoominfo: {listRoominfo}')
         #someoneInviteToRoomSignal = soc.recv(1024).decode("utf8")
         #if someoneInviteToRoomSignal == 'SomeOneInviteYouToARoom':
         soc.sendall(';'.join(listRoominfo).encode("utf8"))
-        acceptRoomSignal = soc.recv(1024).decode("utf8").split(';')
+        print("Waiting for accept invitation...")
+        acceptRoomSignal = soc.recv(1024).decode("utf8")
         print(f'acceptRoomSignal: {acceptRoomSignal}')
-        if acceptRoomSignal[0] == 'SomeOneInviteYouToARoom':
-            if recieveInviteCreateRoom(soc, acceptRoomSignal) == True:
-                GamePlay(soc)
-                break
-        elif acceptRoomSignal[0] == "Accepted_create_room":
+        if acceptRoomSignal == "Accepted_create_room":
             print("invitation is accepted")
             opponentAcceptCreateRoom = True
             GamePlay(soc)
         else:
             print("invitation is rejected")
+
+            
+def recieveInviteCreateRoom(soc, message):
+    print("hello1")
+    removeJustDoItSignal = soc.recv(1024).decode("utf8")
+    print("hello2")
     
-def recieveInviteCreateRoom(soc, acceptRoomSignal):
-    print(f"{acceptRoomSignal[2]} invite you to room {acceptRoomSignal[1]}")
-    choice=input("Enter your choice (y/n): ")
+    print(f'removeJustDoItSignal: {removeJustDoItSignal}')
+    print(f"{message[2]} invite you to room {message[1]}")
+    choice = input("Enter your choice (y/n): ")
     if choice == 'y':
         soc.sendall("Accept".encode("utf8"))
+        time.sleep(0.5)
+        soc.sendall("hasAInvitation".encode("utf8"))
         return True
     else:
         soc.sendall("Reject".encode("utf8"))
+        clearConsole()
         return False
 #----------End Waiting Room------
 
@@ -412,78 +446,23 @@ def SetupInfo(soc):
 
 def GamePlay(soc):
     clearConsole()
+    
+    readyToStartGame = input("Enter something to startGame")
+    
     board1 = []
     board2 = []
     def createBoard():
         #start creating Shipboard
+        while(len(board1) != 0):
+            board1.pop()
+        while(len(board2) != 0):
+            board2.pop()
         with open('Ship1.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for row in csv_reader:
                 board1.append(row)
         for x in range(10):
             board2.append(["O"] * 10)
-    
-    # def printTwoBoard():
-    #     # print(Fore.RED)
-    #     # print(Back.CYAN)
-    #     gotoxy(7,1)
-    #     print("Your board")
-        
-    #     gotoxy(41,1)
-    #     print("Your opponent's board")
-        
-    #     gotoxy(1, 2)
-    #     print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
-    #     lineCount = 0
-    #     for row in board1:
-    #         print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "H " + Style.RESET_ALL + Style.NORMAL, end="")
-    #         # print(Fore.RED + Back.CYAN  + " ".join(row),end="")
-    #         positionCount = 0
-    #         for i in range(len(row)):
-    #             if row[i] == "O":
-    #                 print(Fore.WHITE + Back.CYAN  + row[i],end="")
-    #             elif row[i]=="X":
-    #                 print(Fore.BLACK + Back.CYAN  + row[i],end="")
-    #             elif row[i]=="D":
-    #                 print(Fore.RED + Back.CYAN  + row[i],end="")
-    #             elif row[i]=="M":
-    #                 print(Fore.MAGENTA + Back.CYAN  + row[i],end="")
-    #             if positionCount != len(row) - 1:
-    #                 print(" ",end = "")
-    #             positionCount += 1
-    #         print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + " H" + Style.RESET_ALL)
-    #     print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
-        
-    #     print()
-        
-    #     x = 40
-    #     y = 2
-    #     gotoxy(x,y)
-    #     y+=1
-    #     print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
-    #     lineCount = 0
-    #     for row in board2:
-    #         gotoxy(x,y)
-    #         y += 1
-    #         print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "H " + Style.RESET_ALL + Style.NORMAL, end="")
-    #         # print(Fore.RED + Back.CYAN  + " ".join(row),end="")
-    #         positionCount = 0
-    #         for i in range(len(row)):
-    #             if row[i] == "O":
-    #                 print(Fore.WHITE + Back.CYAN  + row[i],end="")
-    #             elif row[i]=="X":
-    #                 print(Fore.BLACK + Back.CYAN  + row[i],end="")
-    #             elif row[i]=="D":
-    #                 print(Fore.RED + Back.CYAN  + row[i],end="")
-    #             elif row[i]=="M":
-    #                 print(Fore.MAGENTA + Back.CYAN  + row[i],end="")
-    #             if positionCount != len(row) - 1:
-    #                 print(" ",end = "")
-    #             positionCount += 1
-    #         print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + " H" + Style.RESET_ALL)
-    #     gotoxy(x,y)
-    #     y+=1
-    #     print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
     
     def printTwoBoard():
         # print(Fore.RED)
@@ -557,8 +536,12 @@ def GamePlay(soc):
     def gotoxy(x,y):
         print ("%c[%d;%df" % (0x1B, y, x), end='')
     
+    print("hello1")
     createBoard()
+    print("hello2")
     sendBoardtoServer()
+    print("hello3")
+    printTwoBoard()
     
     # soc.sendall(';'.join(list).encode("utf8"))
     # message = soc.recv(1024).decode("utf8")
@@ -611,10 +594,10 @@ def GamePlay(soc):
                             endGame= True
                     elif messageOpponentTurn != "YourTurn":
                         # ban trung
-                        board1[oppoX][oppoY] = "D" ################ xoa dong duoi
+                        board1[oppoX][oppoY] = "D" 
                         print("They hit your ship")
                     else:
-                        board2[oppoX][oppoY] = "M" ################ xoa dong duoi
+                        board2[oppoX][oppoY] = "M" 
                         print("They miss your ship")
             elif message == "YouWin":
                 clearConsole() ####################
@@ -645,7 +628,7 @@ def GamePlay(soc):
         while messageOpponentTurn != "YourTurn":
             printTwoBoard() #########
             positionOpponentBullet = soc.recv(1024).decode("utf8").split(";")
-            clearConsole() ############
+            clearConsole() ##########
             oppoX = int(positionOpponentBullet[0])
             oppoY = int(positionOpponentBullet[1])
             print(f"Opponent' bullet position: X = {oppoX}, y= {oppoY}.")

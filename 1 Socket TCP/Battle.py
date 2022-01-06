@@ -365,17 +365,97 @@ def clearConsole():
 
 colorama.init()
 
-def Plus(a):
-    if a> 10:
-        return True
-    else:
-        return False
+board1 = []
+board2 = []
+def createBoard():
+    #start creating Shipboard
+    while(len(board1) != 0):
+        board1.pop()
+    while(len(board2) != 0):
+        board2.pop()
+    with open('Ship1.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            board1.append(row)
+    for x in range(10):
+        board2.append(["O"] * 10)
 
+def printTwoBoard():
+    # print(Fore.RED)
+    # print(Back.CYAN)
+    gotoxy(7,3)
+    print("Your board")
+    
+    gotoxy(41,3)
+    print("Your opponent's board")
+    
+    gotoxy(1, 4)
+    print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
+    lineCount = 0
+    for row in board1:
+        print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "H " + Style.RESET_ALL + Style.NORMAL, end="")
+        # print(Fore.RED + Back.CYAN  + " ".join(row),end="")
+        positionCount = 0
+        for i in range(len(row)):
+            if row[i] == "O":
+                print(Fore.WHITE + Back.CYAN  + row[i],end="")
+            elif row[i]=="X":
+                print(Fore.BLACK + Back.CYAN  + row[i],end="")
+            elif row[i]=="D":
+                print(Fore.RED + Back.CYAN  + row[i],end="")
+            elif row[i]=="M":
+                print(Fore.MAGENTA + Back.CYAN  + row[i],end="")
+            if positionCount != len(row) - 1:
+                print(" ",end = "")
+            positionCount += 1
+        print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + " H" + Style.RESET_ALL)
+    print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
+    
+    print()
+    
+    x = 40
+    y = 4
+    gotoxy(x,y)
+    y+=1
+    print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
+    lineCount = 0
+    for row in board2:
+        gotoxy(x,y)
+        y += 1
+        print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "H " + Style.RESET_ALL + Style.NORMAL, end="")
+        # print(Fore.RED + Back.CYAN  + " ".join(row),end="")
+        positionCount = 0
+        for i in range(len(row)):
+            if row[i] == "O":
+                print(Fore.WHITE + Back.CYAN  + row[i],end="")
+            elif row[i]=="X":
+                print(Fore.BLACK + Back.CYAN  + row[i],end="")
+            elif row[i]=="D":
+                print(Fore.RED + Back.CYAN  + row[i],end="")
+            elif row[i]=="M":
+                print(Fore.MAGENTA + Back.CYAN  + row[i],end="")
+            if positionCount != len(row) - 1:
+                print(" ",end = "")
+            positionCount += 1
+        print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + " H" + Style.RESET_ALL)
+    gotoxy(x,y)
+    y+=1
+    print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
+
+def sendBoardtoServer():
+    boardString = []
+    for row in board1:
+        boardString.append(",".join(row))
+    boardString= ";".join(boardString)
+    soc.sendall(boardString.encode("utf8"))
+
+def gotoxy(x,y):
+    print ("%c[%d;%df" % (0x1B, y, x), end='')
 
 if __name__ == "__main__":
-    x=9
-    if Plus(x) == True:
-        print("T")
-    else:
-        print("F")
-        
+    print("hello1")
+    createBoard()
+    print("hello2")
+    # sendBoardtoServer()
+    print("hello3")
+    printTwoBoard()

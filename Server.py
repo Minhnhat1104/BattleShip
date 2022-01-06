@@ -64,6 +64,7 @@ def createServer():
                 nClient += 1
                 print("Connected to Client: ", clientAddr)
                 thr1 = threading.Thread(target = handleClient, args = (clientConnection, clientAddr))
+                # thr1 = threading.Thread(target = handleClientDemo, args = (clientConnection, clientAddr))
                 thr1.daemon = True
                 thr1.start()
                 nClient -= 1
@@ -71,6 +72,12 @@ def createServer():
                 print("Client's connection error")
     finally:
         soc.close()
+
+# def handleClientDemo(clientConnection, clientAddr):
+#     clientConnection.sendall("MessageSendingBefore;".encode("utf8"))
+#     time.sleep(5)
+#     clientConnection.sendall("MessageAfterSleep".encode("utf8"))
+    
 
 def handleClient(clientConnection, clientAddr):
     isLogin = False
@@ -121,15 +128,31 @@ def startingRoom(clientConnection):
     while joinRoomWithAnotherPlayer == False:
         listOnlineUser = socketPlayer.keys()
         clientConnection.sendall(';'.join(listOnlineUser).encode("utf8"))
-        listRoomInfo = clientConnection.recv(1024).decode("utf8").split(';')
+        creatingIDRoomMessage = clientConnection.recv(1024).decode("utf8")
+        clientConnection.sendall("justDoIt".encode("utf8"))
+        hasInvitationMess = clientConnection.recv(1024).decode("utf8")
+        print(f"hasInvitationMess: {hasInvitationMess}")
+        if hasInvitationMess == "hasAInvitation":
+            print("Terminated thread")
+            return
+
+        choosingUserNameMessage = clientConnection.recv(1024).decode("utf8")
+        clientConnection.sendall("justDoIt ".encode("utf8"))
+        hasInvitationMess = clientConnection.recv(1024).decode("utf8")
+        if hasInvitationMess == "hasAInvitation":
+            return
+        
+        listRoomInfo = clientConnection.recv(1024).decode("utf8").split(";")
         print(listRoomInfo)
-        joinRoomWithAnotherPlayer = Createroom(listRoomInfo[0], listRoomInfo[1], listRoomInfo[2])
-        if joinRoomWithAnotherPlayer == True:
+        if Createroom(listRoomInfo[0], listRoomInfo[1], listRoomInfo[2]) == True:
             GamePlay(listRoomInfo[1], listRoomInfo[2])
             
 def Createroom(roomID, username1, username2):
-    socketPlayer[username2].sendall(';'.join(['SomeOneInviteYouToARoom', roomID, username1]).encode("utf8"))
+    socketPlayer[username2].sendall('SomeOneInviteYouToARoom;'.encode("utf8"))
+    socketPlayer[username2].sendall(";".join([roomID, username1]).encode("utf8"))
+    
     signalAcceptCreateRoom = socketPlayer[username2].recv(1024).decode("utf8")
+    print(f"signalAcceptCreateRoom: {signalAcceptCreateRoom}")
     if signalAcceptCreateRoom == "Accept":
         socketPlayer[username1].sendall("Accepted_create_room".encode("utf8"))
         return True
@@ -350,8 +373,9 @@ def SetUpInfo(clientConnection):
 #begin Game section
 
 def GamePlay(username1, username2):
-    # loginInfo = clientConnection.recv(1024).decode("utf8")
-    # clientConnection.sendall('Login Successful'.encode("utf8"))
+    
+    print("PLAY GAME!!!!")
+    
     def printTwoBoard():
         print(f"Board's {username1}")
         for row in board1:
@@ -372,6 +396,10 @@ def GamePlay(username1, username2):
     
     def isDestroyedAll(listShipBoard):
         return len(listShipBoard) == 0
+    
+    
+    print(f"Username1: {username1}")
+    print(f"Username2: {username2}")
     
     stringBoard1 = socketPlayer[username1].recv(1024).decode("utf8")
     print(f"Recieved Board from {username1}")
