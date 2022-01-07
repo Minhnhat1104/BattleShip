@@ -72,13 +72,7 @@ def createServer():
                 print("Client's connection error")
     finally:
         soc.close()
-
-# def handleClientDemo(clientConnection, clientAddr):
-#     clientConnection.sendall("MessageSendingBefore;".encode("utf8"))
-#     time.sleep(5)
-#     clientConnection.sendall("MessageAfterSleep".encode("utf8"))
     
-
 def handleClient(clientConnection, clientAddr):
     def caesar_decrypt(word):
         c = ''
@@ -128,6 +122,7 @@ def handleClient(clientConnection, clientAddr):
     # draft
     # clientConnection.sendall(content1.encode("utf8"))     #send
     # content2 = clientConnection.recv(1024).decode("utf8") #recieve
+    
     # end draft
 
 # phan dang lam
@@ -386,10 +381,13 @@ def SetUpInfo(clientConnection):
         choice = int(clientConnection.recv(1024).decode("utf8"))
         if choice == 1:
             SetFullname(clientConnection)
+            UpdateDatabase()
         elif choice == 2:
             SetBirthday(clientConnection)
+            UpdateDatabase()
         elif choice == 3:
             SetNote(clientConnection)
+            UpdateDatabase()
 
 #end after login successful section
 
@@ -474,10 +472,8 @@ def GamePlay(username1, username2):
                 socket2.sendall(";".join(socket1Bullet).encode("utf8"))
                 time.sleep(1)
                 socket2.sendall("YouLose".encode("utf8"))
-                time.sleep(1)
-                socket2.sendall("Please send play again signal".encode("utf8"))
-                socket1.sendall('Waiting for signal from the other player'.encode("utf8"))
                 endGameSignal2 = socket2.recv(1024).decode("utf8")
+                print(f"endGameSignal2: {endGameSignal2}") ################
                 if endGameSignal2 == "endGame":
                     socket1.sendall('endGame'.encode("utf8"))
                 else:
@@ -485,6 +481,8 @@ def GamePlay(username1, username2):
                     endGameSignal1 = socket1.recv(1024).decode("utf8")
                     if endGameSignal1 == "endGame":
                         socket2.sendall('endGame'.encode("utf8"))
+                    else:
+                        socket2.sendall('acceptPlayGame'.encode("utf8"))
         elif board2[xSocket1][ySocket1] == "O":
             socket1.sendall('Miss'.encode("utf8"))
             socket2.sendall(";".join(socket1Bullet).encode("utf8"))
@@ -510,10 +508,8 @@ def GamePlay(username1, username2):
                 socket1.sendall(";".join(socket2Bullet).encode("utf8"))
                 time.sleep(1)
                 socket1.sendall("YouLose".encode("utf8"))
-                time.sleep(1)
-                socket1.sendall("Please send play again signal".encode("utf8"))
-                socket2.sendall('Waiting for signal from the other player'.encode("utf8"))
                 endGameSignal1 = socket1.recv(1024).decode("utf8")
+                print(f"endGameSignal1: {endGameSignal1}") ###################
                 if endGameSignal1 == "endGame":
                     socket2.sendall('endGame'.encode("utf8"))
                 else:
@@ -521,6 +517,8 @@ def GamePlay(username1, username2):
                     endGameSignal2 = socket2.recv(1024).decode("utf8")
                     if endGameSignal2 == "endGame":
                         socket1.sendall('endGame'.encode("utf8"))
+                    else:
+                        socket1.sendall('acceptPlayGame'.encode("utf8"))
         elif board1[xSocket2][ySocket2] == "O":
             socket2.sendall('Miss'.encode("utf8"))
             socket1.sendall(";".join(socket2Bullet).encode("utf8"))
@@ -530,7 +528,6 @@ def GamePlay(username1, username2):
     
     socket1Attack()        
         
-
 #end Game section
 
 if (__name__=="__main__"):

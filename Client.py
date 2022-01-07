@@ -47,7 +47,6 @@ def createClient():
     try:
         soc.connect((SERVER_ADDRESS, PORT))
         loginSuccessful = False
-        username = ''
         while loginSuccessful == False:
             if Login(soc) == True:
                 loginSuccessful = True
@@ -91,7 +90,7 @@ def createClient():
         
         #draft
         # content1 = soc.recv(1024).decode("utf8") #recieve
-        # soc.sendall(content2.encode("utf8")) #send
+        # soc.sendall("1234567".encode("utf8")) #send
         #end draft
 
     except:
@@ -99,7 +98,7 @@ def createClient():
     finally:
         soc.close()
 
-#----------Waiting Room------
+#----------Waiting Room-------
 
 messageWhenJoinRoomList = ""
 
@@ -163,8 +162,7 @@ def startingRoomAndRecieveInvitation(soc):
             GamePlay(soc)
         else:
             print("invitation is rejected")
-
-            
+           
 def recieveInviteCreateRoom(soc, message):
     removeJustDoItSignal = soc.recv(1024).decode("utf8")
     print(f"{message[2]} invite you to room {message[1]}")
@@ -178,10 +176,8 @@ def recieveInviteCreateRoom(soc, message):
         soc.sendall("Reject".encode("utf8"))
         clearConsole()
         return False
+
 #----------End Waiting Room------
-
-
-#end phan dang lam
 
 #end client-sever section
 
@@ -595,7 +591,7 @@ def GamePlay(soc):
                     clearConsole()  ###############
                     oppoX = int(positionOpponentBullet[0])
                     oppoY = int(positionOpponentBullet[1])
-                    print(f"Opponent' bullet position: X = {oppoX}, y= {oppoY}.")
+                    print(f"Opponent' bullet position: X = {oppoX}, y = {oppoY}.")
                     messageOpponentTurn = soc.recv(1024).decode("utf8")
                     if messageOpponentTurn == "YouLose":
                         clearConsole() #######################
@@ -603,7 +599,6 @@ def GamePlay(soc):
                         printTwoBoard()
                         print("Opponent hit all your ships!")
                         print("You Lose!")
-                        requestToPlayAgainSignel = soc.recv(1024).decode("utf8")
                         print("Do you want to play again?")
                         choice = input("Enter your choice (y/n): ")
                         if choice == "n":
@@ -611,16 +606,22 @@ def GamePlay(soc):
                             return
                         else:
                             soc.sendall("playAgain".encode("utf8"))
+                            messageAcceptPlayAgain = soc.recv(1024).decode("utf8")
+                            print("Waiting for opponent's response")
+                            if messageAcceptPlayAgain == 'acceptPlayGame':
+                                GamePlay(soc)
+                                return
                         print("Waiting for accept playing again from opponent...")
                         messageOpponentPlayAgain = soc.recv(1024).decode("utf8")
                         if messageOpponentPlayAgain == "endGame":
                             endGame= True
+                            return
                     elif messageOpponentTurn != "YourTurn":
                         # ban trung
                         board1[oppoX][oppoY] = "D" 
                         print("They hit your ship")
                     else:
-                        board2[oppoX][oppoY] = "M" 
+                        board1[oppoX][oppoY] = "M" 
                         print("They miss your ship")
             elif message == "YouWin":
                 clearConsole() ####################
@@ -629,20 +630,24 @@ def GamePlay(soc):
                 print("Your bullet hit a ship!")
                 print("Congratulation! you win the game.")
                 print("Waiting for accept playing again from opponent...")
-                waitingPlayAgainSignalFromOpponent = soc.recv(1024).decode("utf8")
                 PlayAgainSignalFromOpponent = soc.recv(1024).decode("utf8")
+                print(f"PlayAgainSignalFromOpponent: {PlayAgainSignalFromOpponent}")
                 if PlayAgainSignalFromOpponent == 'endGame':
                     print("Opponent refuse to play again!")
-                    print("The game will end right now")
+                    print("The game will end right now...")
+                    time.sleep(2)
                     endGame = True
-                elif PlayAgainSignalFromOpponent == "Please send play again signal":
+                    return       
+                else:
                     print("Do you want to play again?")
                     choice = input("Enter your choice (y/n): ")
                     if choice == "n":
                         soc.sendall("endGame".encode("utf8"))
                         return
                     else:
-                        soc.sendall("playAgain".encode("utf8"))     
+                        soc.sendall("playAgain".encode("utf8"))           
+                        GamePlay()
+                        return  
     #go second turn
     elif turnOrder == "2":
         print("Your opponent go first!")
@@ -670,10 +675,16 @@ def GamePlay(soc):
                     return
                 else:
                     soc.sendall("playAgain".encode("utf8"))
+                    messageAcceptPlayAgain = soc.recv(1024).decode("utf8")
+                    print("Waiting for opponent's response")
+                    if messageAcceptPlayAgain == 'acceptPlayGame':
+                        GamePlay(soc)
+                        return
                 print("Waiting for accept playing again from opponent...")
                 messageOpponentPlayAgain = soc.recv(1024).decode("utf8")
                 if messageOpponentPlayAgain == "endGame":
                     endGame= True
+                    return
             elif messageOpponentTurn != "YourTurn":
                 # ban trung
                 board1[oppoX][oppoY] = "D"  ####### xoa dong o duoi
@@ -719,16 +730,23 @@ def GamePlay(soc):
                             return
                         else:
                             soc.sendall("playAgain".encode("utf8"))
+                            messageAcceptPlayAgain = soc.recv(1024).decode("utf8")
+                            print("Waiting for opponent's response")
+                            if messageAcceptPlayAgain == 'acceptPlayGame':
+                                GamePlay(soc)
+                                return
                         print("Waiting for accept playing again from opponent...")
                         messageOpponentPlayAgain = soc.recv(1024).decode("utf8")
                         if messageOpponentPlayAgain == "endGame":
                             endGame= True
+                            return
                     elif messageOpponentTurn != "YourTurn":
                         # ban trung
                         board1[oppoX][oppoY] = "D" 
                         print("they hit your ship")
                     else:
                         board1[oppoX][oppoY] = "M"
+                        print("They miss your ship")
             elif message == "YouWin":
                 clearConsole()
                 board2[int(x)][int(y)] = "D"
@@ -736,12 +754,14 @@ def GamePlay(soc):
                 print("Your bullet hit a ship!")
                 print("Congratulation! you win the game.")
                 print("Waiting for accept playing again from opponent...")
-                waitingPlayAgainSignalFromOpponent = soc.recv(1024).decode("utf8")
                 PlayAgainSignalFromOpponent = soc.recv(1024).decode("utf8")
+                print(f"PlayAgainSignalFromOpponent: {PlayAgainSignalFromOpponent}")
                 if PlayAgainSignalFromOpponent == 'endGame':
                     print("Opponent refuse to play again!")
                     print("The game will end right now")
+                    time.sleep(2)
                     endGame = True
+                    return       
                 elif PlayAgainSignalFromOpponent == "Please send play again signal":
                     print("Do you want to play again?")
                     choice = input("Enter your choice (y/n): ")
@@ -749,7 +769,9 @@ def GamePlay(soc):
                         soc.sendall("endGame".encode("utf8"))
                         return
                     else:
-                        soc.sendall("playAgain".encode("utf8"))            
+                        soc.sendall("playAgain".encode("utf8"))           
+                        GamePlay()
+                        return
 
 if __name__ == "__main__":
     clearConsole()
