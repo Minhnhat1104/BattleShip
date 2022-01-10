@@ -124,8 +124,7 @@ def handleClient(clientConnection, clientAddr):
     # content2 = clientConnection.recv(1024).decode("utf8") #recieve
     
     # end draft
-
-# phan dang lam
+# create room
 
 def startingRoom(clientConnection):
     startGameSignal = clientConnection.recv(1024).decode("utf8")
@@ -164,7 +163,6 @@ def Createroom(roomID, username1, username2):
         socketPlayer[username1].sendall("Rejected_create_room".encode("utf8"))
         return False
 
-# end phan dang lam
 
 #end client-sever section
 

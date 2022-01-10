@@ -17,6 +17,7 @@ SEPARATOR = "<SEPARATOR>"
 BUFFER_SIZE = 4096 # send 4096 bytes each time step
 usernameLoginSuccessful = []
 recieveInvitation = False
+autoCloseSocket = True
 
 #------------Cac ham thuong xuyen dung------------
 
@@ -32,7 +33,6 @@ def waiting2sAndCleanConsole():
     clearConsole()
 
 #------------End Cac ham thuong xuyen dung------------
-
 
 #begin client-sever section
 
@@ -92,11 +92,13 @@ def createClient():
         # content1 = soc.recv(1024).decode("utf8") #recieve
         # soc.sendall("1234567".encode("utf8")) #send
         #end draft
-
+        autoCloseSocket = False
+        soc.close()
     except:
         print("Server hasn't been install: ")
     finally:
-        soc.close()
+        if autoCloseSocket == True:
+            soc.close()
 
 #----------Waiting Room-------
 
@@ -499,7 +501,6 @@ def GamePlay(soc):
         
         gotoxy(1, 4)
         print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
-        lineCount = 0
         for row in board1:
             print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "H " + Style.RESET_ALL + Style.NORMAL, end="")
             # print(Fore.RED + Back.CYAN  + " ".join(row),end="")
@@ -526,7 +527,6 @@ def GamePlay(soc):
         gotoxy(x,y)
         y+=1
         print(Fore.YELLOW + Back.YELLOW + Style.NORMAL + "HHHHHHHHHHHHHHHHHHHHHHH" + Style.RESET_ALL)
-        lineCount = 0
         for row in board2:
             gotoxy(x,y)
             y += 1
@@ -562,8 +562,7 @@ def GamePlay(soc):
     
     createBoard()
     sendBoardtoServer()
-    # soc.sendall(';'.join(list).encode("utf8"))
-    # message = soc.recv(1024).decode("utf8")
+    
     turnOrder = soc.recv(1024).decode("utf8")
     if turnOrder == "1":
         endGame = False
@@ -667,7 +666,6 @@ def GamePlay(soc):
                 printTwoBoard()
                 print("Opponent hit all your ships!")
                 print("You Lose!")
-                requestToPlayAgainSignel = soc.recv(1024).decode("utf8")
                 print("Do you want to play again?")
                 choice = input("Enter your choice (y/n): ")
                 if choice == "n":
@@ -692,6 +690,7 @@ def GamePlay(soc):
             else:
                 board1[oppoX][oppoY] = "M"  ####### xoa dong o duoi
                 print("They miss your ship")
+                
         while endGame == False:
             printTwoBoard()
             print("Your turn!")
